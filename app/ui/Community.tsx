@@ -3,7 +3,7 @@
 /* 素材已预压缩为本地 WebP，并设置固定尺寸与首屏预加载，无需运行时转码。 */
 /* eslint-disable @next/next/no-img-element */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowRight, ArrowUpRight, BookOpen, Bookmark, Clock3, Compass, FileText, FolderHeart, Link2, ListFilter, LoaderCircle, Menu, Pencil, Plus, Search, Settings2, SlidersHorizontal, Wallet, X } from "lucide-react";
 import { api, dateLabel, errorText, mutation, shortAddress, signIn } from "./api";
 import type { AppInfo, Collection, Feed, Post, Session, Tab, User } from "./api";
@@ -53,6 +53,9 @@ export default function Community() {
   const actionLock = useRef(false);
   const loadGeneration = useRef(0);
   const mounted = useRef(true);
+
+  // 视图或筛选变化会收起主视觉，渲染后回到页首，避免浏览器保留旧滚动位置。
+  useLayoutEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [view, tab, category, query]);
 
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => {
