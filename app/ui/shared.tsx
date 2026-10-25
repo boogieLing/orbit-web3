@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef } from "react";
 import type { ReactNode } from "react";
-import { ArrowDownUp, ArrowUpRight, BookOpen, CheckCheck, Check, Fingerprint, Shapes, X, LoaderCircle, CircleAlert, Link2 } from "lucide-react";
+import { ArrowDownUp, ArrowUpRight, BookOpen, Orbit, Check, Fingerprint, Shapes, X, LoaderCircle, CircleAlert, Link2 } from "lucide-react";
 import type { AppInfo, Post } from "./api";
 import { externalHref } from "./api";
 
@@ -11,7 +11,7 @@ export const categories = [{ id: "all", label: "全部应用", Icon: Shapes }, {
 export const categoryName = (id: string) => categories.find(category => category.id === id)?.label || "应用";
 
 // 展示社区品牌文字与图形标记，供页头页脚复用。
-export function Logo() { return <span className="brand"><span className="brand-symbol"><CheckCheck size={22} strokeWidth={2.2} /></span><span>用过再说<small>UsedIt</small></span></span>; }
+export function Logo() { return <span className="brand"><span className="brand-symbol"><Orbit size={24} strokeWidth={1.7} aria-hidden="true" /></span><span>ORBIT<small>引力 · WEB3</small></span></span>; }
 
 // 按应用分类展示统一图标，避免把装饰图形当成官方标志。
 export function AppMark({ app, large = false }: { app?: AppInfo; large?: boolean }) {

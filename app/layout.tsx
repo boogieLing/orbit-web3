@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "用过再说 UsedIt · 发现值得用的 Web3 应用",
+  title: "Orbit 引力 · 发现值得用的 Web3 应用",
   description: "发现值得尝试的 Web3 应用，记录使用体验，回顾交互记录，整理属于自己的应用精选。",
   icons: {
     icon: "/favicon.svg",

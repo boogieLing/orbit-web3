@@ -75,18 +75,18 @@ function Guide({ user, apps, onUser, onFinish }: GuideProps) {
     }
   };
 
-  return <Modal title="用过再说 · 新手引导" onClose={() => onFinish()} busy={busy} className="onboarding-modal" wide>
+  return <Modal title="Orbit 引力 · 新手引导" onClose={() => onFinish()} busy={busy} className="onboarding-modal" wide>
     <div className="onboarding-body">
       <div className="onboarding-progress" aria-label={`第 ${step + 1} 步，共 2 步`}><span className="active" /><span className={step === 1 ? "active" : ""} /><small>0{step + 1} / 02</small></div>
       {step === 0 ? <div className="onboarding-intro">
-        <div className="onboarding-copy"><div className="eyebrow">YOUR NEXT GOOD FIND</div><h3 ref={heading} tabIndex={-1}>找到下一款<br />值得用的 <span>Web3 应用。</span></h3><p className="onboarding-description">用过再说，帮你发现应用、了解使用体验，<br className="onboarding-desktop-break" />再把好发现整理成自己的精选页。</p>
+        <div className="onboarding-copy"><div className="eyebrow">YOUR NEXT GOOD FIND</div><h3 ref={heading} tabIndex={-1}>找到下一款<br />值得用的 <span>Web3 应用。</span></h3><p className="onboarding-description">Orbit 引力，帮你发现应用、了解使用体验，<br className="onboarding-desktop-break" />再把好发现整理成自己的精选页。</p>
           <ol className="onboarding-benefits">
             <li><Compass size={19} /><div><strong>找应用</strong><span>从链上身份、交易工具、数字收藏开始。</span></div></li>
             <li><BookOpen size={19} /><div><strong>看体验</strong><span>阅读使用体验与资料笔记，看清来源再选择。</span></div></li>
             <li><FolderHeart size={19} /><div><strong>留住好发现</strong><span>收藏有用内容，整理成自己的精选页。</span></div></li>
           </ol>
         </div>
-        <div className="onboarding-art" aria-hidden="true"><img src="/art/portal.webp" alt="" width={1536} height={1024} /><div><span>DISCOVER. TRY. KEEP.</span><strong>好不好用，<br />用过再说。</strong></div></div>
+        <div className="onboarding-art" aria-hidden="true"><img src="/art/portal.webp" alt="" width={1536} height={1024} /><div><span>DISCOVER. TRY. KEEP.</span><strong>好发现，<br />自有引力。</strong></div></div>
       </div> : <div className="onboarding-preferences">
         <div className="eyebrow">MAKE IT YOURS</div><h3 ref={heading} tabIndex={-1}>你想先探索什么？</h3><p className="onboarding-description">选几个感兴趣的主题，帮你整理推荐内容。<br />以后可以在「阅读偏好」里随时调整。</p>
         <div className="onboarding-interests" role="group" aria-label="选择感兴趣的主题">{choices.map(tag => <button key={tag} type="button" aria-pressed={tags.includes(tag)} disabled={busy} onClick={() => setTags(values => values.includes(tag) ? values.filter(value => value !== tag) : [...values, tag])}><span className="interest-check">{tags.includes(tag) && <Check size={13} />}</span>{tag}</button>)}</div>

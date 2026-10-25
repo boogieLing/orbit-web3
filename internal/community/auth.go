@@ -85,7 +85,7 @@ func (s *Service) challenge(c *call) (int, any, error) {
 	// 有效期与随机数写进待签正文，客户端不能单独替换这些字段。
 	expires := c.now.Add(5 * time.Minute)
 	nonce = digest(nonce)[:32]
-	message := fmt.Sprintf("%s wants you to sign in with your Ethereum account:\n%s\n\nSign in to UsedIt. This message does not authorize transactions.\n\nURI: %s://%s\nVersion: 1\nChain ID: 1\nNonce: %s\nIssued At: %s\nExpiration Time: %s", c.url.Host, input.Address, c.url.Scheme, c.url.Host, nonce, c.now.Format(time.RFC3339), expires.Format(time.RFC3339))
+	message := fmt.Sprintf("%s wants you to sign in with your Ethereum account:\n%s\n\nSign in to Orbit. This message does not authorize transactions.\n\nURI: %s://%s\nVersion: 1\nChain ID: 1\nNonce: %s\nIssued At: %s\nExpiration Time: %s", c.url.Host, input.Address, c.url.Scheme, c.url.Host, nonce, c.now.Format(time.RFC3339), expires.Format(time.RFC3339))
 	_, insertErr := s.query(c.ctx, "INSERT INTO challenges(id,session_token,address,message,expires) VALUES(?,?,?,?,?)", id, c.token, strings.ToLower(input.Address), message, expires.Unix())
 	return 200, map[string]string{"challenge_id": id, "message": message}, insertErr
 }

@@ -6,7 +6,7 @@ const pageTemplate = `<!DOCTYPE html>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{.Title}} · 用过再说</title>
+<title>{{.Title}} · Orbit 引力</title>
 <style>
 :root{color-scheme:light;--bg:#f4f5ef;--surface:#fff;--ink:#26372d;--muted:#647265;--line:#dce3d8;--accent:#49624d;--soft:#e8eee4;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);line-height:1.7}.theme-ink{--bg:#f1f2f3;--ink:#23272b;--muted:#697078;--line:#d9dde0;--accent:#343b42;--soft:#e6e9ec}.theme-sand{--bg:#f6f1e9;--ink:#493e31;--muted:#7c7062;--line:#e1d8ca;--accent:#806347;--soft:#eee3d3}
@@ -18,7 +18,7 @@ section{margin:30px 0}section h2{font-size:18px;letter-spacing:-.02em;margin:0 0
 </head>
 <body class="theme-{{.Theme}} layout-{{.Layout}}">
 <main>
-<div class="brand">UsedIt / 个人精选</div>
+<div class="brand">ORBIT / 个人精选</div>
 <header><h1>{{.Title}}</h1>{{if .Description}}<p>{{.Description}}</p>{{end}}<div class="counts">{{len .Apps}} 个应用 · {{len .Posts}} 篇记录</div></header>
 <div class="filters" role="search" aria-label="筛选精选内容">
 <label class="search-label">搜索内容<input id="search" type="search" placeholder="搜索名称、正文或标签" maxlength="200" autocomplete="off"></label>
@@ -34,7 +34,7 @@ section{margin:30px 0}section h2{font-size:18px;letter-spacing:-.02em;margin:0 0
 {{range .Posts}}<article data-card data-kind="{{.Label}}" data-category="{{.Category}}" data-search="{{.Search}}"><div><div class="eyebrow"><span class="kind">{{.Label}}</span>{{if .AppName}}<span>{{.AppName}}</span>{{end}}{{if .Sentiment}}<span>{{.Sentiment}}</span>{{end}}</div><h3>{{.Title}}</h3></div><div><div class="card-body">{{.Body}}</div>{{if .Tags}}<div class="tags">{{range .Tags}}<span>{{.}}</span>{{end}}</div>{{end}}</div></article>{{end}}
 </div></section>{{end}}
 <p id="empty" class="empty" hidden>没有符合条件的内容。换个关键词，或清除筛选。</p>
-<footer>用过再说 · 精选内容独立保存，资料笔记与使用体验分别标注。</footer>
+<footer>Orbit 引力 · 精选内容独立保存，资料笔记与使用体验分别标注。</footer>
 </main>
 <script>
 (()=>{'use strict';

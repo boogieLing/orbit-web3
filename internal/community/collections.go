@@ -89,7 +89,7 @@ func (s *Service) collectionRoute(c *call, path string) (int, any, error) {
 	}
 	if len(parts) == 2 && parts[1] == "export" && c.req.Method == "GET" {
 		c.headers["content-type"] = "text/html; charset=utf-8"
-		c.headers["content-disposition"] = "attachment; filename=usedit-collection.html"
+		c.headers["content-disposition"] = "attachment; filename=orbit-collection.html"
 		c.headers["content-security-policy"] = "sandbox allow-scripts; default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'"
 		return 200, rawHTML(current.HTML), nil
 	}
