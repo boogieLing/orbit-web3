@@ -7,7 +7,7 @@ import type { AppInfo, Collection, CollectionDetail, Post } from "./api";
 import { AppMark, Busy, Modal, Notice, SourceTag } from "./shared";
 
 type Draft = Pick<Collection, "title" | "description" | "instructions" | "layout" | "theme" | "app_ids" | "post_ids">;
-const blank: Draft = { title: "", description: "", instructions: "", layout: "editorial", theme: "sand", app_ids: [], post_ids: [] };
+const blank: Draft = { title: "", description: "", instructions: "", layout: "grid", theme: "ink", app_ids: [], post_ids: [] };
 // 提取精选页的可编辑字段，复制数组以隔离已保存版本。
 const fromCollection = (value: Collection): Draft => ({ title: value.title, description: value.description, instructions: value.instructions, layout: value.layout, theme: value.theme, app_ids: [...value.app_ids], post_ids: [...value.post_ids] });
 
