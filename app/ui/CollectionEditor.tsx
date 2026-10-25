@@ -19,8 +19,8 @@ function previewDocument(html: string) {
 }
 
 // 管理精选内容、历史版本、源码和隔离预览，并提交真实保存操作。
-export default function CollectionEditor({ initial, apps, posts, freeform, onSaved, onClose }: {
-  initial: Collection | null; apps: AppInfo[]; posts: Post[]; freeform: boolean;
+export default function CollectionEditor({ initial, apps, posts, freeform, onSaved, onClose, experience = false }: {
+  initial: Collection | null; apps: AppInfo[]; posts: Post[]; freeform: boolean; experience?: boolean;
   onSaved: (collection: Collection) => void; onClose: () => void;
 }) {
   const [current, setCurrent] = useState(initial);
@@ -131,7 +131,7 @@ export default function CollectionEditor({ initial, apps, posts, freeform, onSav
           {source ? tab === "preview" ? <iframe title={`${preview?.title || "精选页"}预览`} srcDoc={source} sandbox="allow-scripts" referrerPolicy="no-referrer" /> : <textarea className="source-view" readOnly value={preview?.html || ""} aria-label="精选页完整源码" spellCheck={false} /> : <div className="preview-empty"><span><LayoutGrid size={36} strokeWidth={1.2} /></span><h3>你的精选，从这里开始</h3><p>在左侧挑选内容并创建，<br />这里会显示可浏览的完整页面。</p></div>}
         </div>
         <div className="preview-export"><span>{preview ? `${preview.title} · 第 ${preview.version} 版` : "内容保存后即可复制或下载"}</span><div><button className="button quiet" disabled={!preview || !!busy} onClick={() => void copy()}><Copy size={15} />复制 HTML</button>{current && <a className="button quiet" href={`/api/v1/collections/${current.id}/export`} download><Download size={15} />下载当前版</a>}</div></div>
-        <section className="compose-area"><div><WandSparkles size={18} /><h3>再多一点个人风格</h3></div>{freeform ? <><p>描述希望调整的排版和表达，将保留为新的版本。</p><textarea rows={2} value={instruction} onChange={event => setInstruction(event.target.value)} placeholder="例如：让应用介绍更简洁，在开头加入阅读建议" disabled={!!busy || !current} /><button className="button secondary" disabled={!!busy || !current || !instruction.trim() || dirty} onClick={() => void compose()}>{busy === "compose" ? <Busy label="正在构建新版本" /> : <><Plus size={15} />应用创作要求</>}</button>{!current && <small>先创建精选页，即可继续调整。</small>}</> : <p>自由创作服务尚未配置。你仍可选择内容、版式和色调，保存完整的精选页。</p>}</section>
+        <section className="compose-area"><div><WandSparkles size={18} /><h3>再多一点个人风格</h3></div>{freeform ? <><p>{experience ? "调整版式、配色、标题与简介，每次修改保存为新版本。" : "描述希望调整的排版和表达，将保留为新的版本。"}</p>{experience && <div className="compose-presets">{["深色卡片", "清爽列表", "暖色手记"].map(value => <button type="button" key={value} disabled={!!busy || !current || dirty} onClick={() => setInstruction(value)}>{value}</button>)}</div>}<textarea aria-label="页面调整要求" rows={2} value={instruction} onChange={event => setInstruction(event.target.value)} placeholder={experience ? "例如：深色卡片；标题：我的链上工具箱；简介：值得反复打开的应用和笔记" : "例如：让应用介绍更简洁，在开头加入阅读建议"} disabled={!!busy || !current} /><button className="button secondary" disabled={!!busy || !current || !instruction.trim() || dirty} onClick={() => void compose()}>{busy === "compose" ? <Busy label="正在构建新版本" /> : <><Plus size={15} />{experience ? "应用页面调整" : "应用创作要求"}</>}</button>{!current && <small>先创建精选页，即可继续调整。</small>}</> : <p>自由创作服务尚未配置。你仍可选择内容、版式和色调，保存完整的精选页。</p>}</section>
       </div>
     </div>
     {closePrompt && <div className="discard-panel" role="alert"><span>有尚未保存的修改。关闭后这些修改会被丢弃。</span><button className="button quiet" onClick={() => setClosePrompt(false)}>继续编辑</button><button className="button danger" onClick={onClose}>放弃修改并关闭</button></div>}

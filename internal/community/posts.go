@@ -58,7 +58,7 @@ func validatePost(input *postInput) error {
 
 // createPost 使用账户内幂等键避免重试产生重复文章。
 func (s *Service) createPost(c *call) (int, any, error) {
-	if c.user.Wallet == nil {
+	if c.user.Wallet == nil && !s.Config.ExperienceMode {
 		return 0, nil, fail(401, "wallet_required", "连接钱包并完成签名后即可发布，当前草稿会保留")
 	}
 	var input postInput
@@ -103,7 +103,7 @@ func rowPost(row database.Row, userID string) Post {
 	if value := database.String(row, "wallet"); value != "" {
 		address = &value
 	}
-	return Post{ID: database.String(row, "id"), Kind: "review", AppID: database.String(row, "app_id"), Title: database.String(row, "title"), Body: database.String(row, "body"), Sentiment: database.String(row, "sentiment"), Tags: list(database.String(row, "tags")), Author: Author{Name: database.String(row, "display_name"), Wallet: address}, ProofStatus: database.String(row, "proof_status"), ProofMessage: database.String(row, "proof_message"), TxHash: database.String(row, "tx_hash"), ProofCheckedAt: database.String(row, "proof_checked_at"), CreatedAt: database.String(row, "created_at"), UpdatedAt: database.String(row, "updated_at"), Revision: database.Int(row, "revision"), Owned: database.String(row, "user_id") == userID}
+	return Post{ID: database.String(row, "id"), Kind: "review", AppID: database.String(row, "app_id"), Title: database.String(row, "title"), Body: database.String(row, "body"), Sentiment: database.String(row, "sentiment"), Tags: list(database.String(row, "tags")), Author: Author{Name: database.String(row, "display_name"), Wallet: address}, ProofStatus: database.String(row, "proof_status"), ProofMessage: database.String(row, "proof_message"), TxHash: database.String(row, "tx_hash"), ProofCheckedAt: database.String(row, "proof_checked_at"), CreatedAt: database.String(row, "created_at"), UpdatedAt: database.String(row, "updated_at"), Revision: database.Int(row, "revision"), Owned: database.String(row, "user_id") == userID, Interaction: storedInteraction(database.String(row, "proof_status"), database.String(row, "proof_data"))}
 }
 
 // references 返回来源明确的资料条目，绝不伪装成用户体验。
@@ -164,7 +164,7 @@ func (s *Service) loadPosts(c *call, where string, args []any, limit int) ([]Pos
 // getPost 获取一个可见条目，删除后的内容不会从旧推荐快照复活。
 func (s *Service) getPost(c *call, id string) (Post, error) {
 	// 资料条目与用户内容共用互动层，但资料来源始终独立标记。
-	for _, post := range references() {
+	for _, post := range s.libraryPosts() {
 		if post.ID == id {
 			hydrated, hydrateErr := s.hydrate(c, []Post{post})
 			if hydrateErr != nil {
@@ -270,10 +270,20 @@ func (s *Service) action(c *call, post Post, kind string) (int, any, error) {
 // verifyPost 在事务外查询链，再以内容版本阻止迟到结果覆盖新编辑。
 func (s *Service) verifyPost(c *call, post Post) (int, any, error) {
 	var input struct {
-		TxHash string `json:"tx_hash"`
+		TxHash   string `json:"tx_hash"`
+		RecordID string `json:"record_id"`
 	}
 	if parseErr := decode(c, &input); parseErr != nil {
 		return 0, nil, parseErr
+	}
+	if input.RecordID != "" {
+		if !s.Config.ExperienceMode {
+			return 0, nil, fail(403, "interaction_disabled", "当前环境不支持记录关联")
+		}
+		return s.attachInteraction(c, post, input.RecordID)
+	}
+	if c.user.Wallet == nil {
+		return 0, nil, fail(400, "record_required", "请选择一条交互记录")
 	}
 	if !txPattern.MatchString(input.TxHash) {
 		return 0, nil, fail(400, "tx_hash", "交易哈希格式不正确")

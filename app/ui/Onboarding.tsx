@@ -94,7 +94,7 @@ function Guide({ user, apps, onUser, onFinish }: GuideProps) {
         <p className="onboarding-recommendation-note">推荐会参考兴趣、收藏和内容反馈；资料笔记与使用体验会分别标注。</p>
         {error && <Notice error>{error}</Notice>}
       </div>}
-      <div className="onboarding-wallet-note"><Wallet size={15} /><span>浏览、收藏、创建精选页，无需连接钱包。发布体验时再连接。</span></div>
+      <div className="onboarding-wallet-note"><Wallet size={15} /><span>{user.can_publish ? "浏览、发布、收藏、创建精选页，全部可以直接开始。" : "浏览、收藏、创建精选页，无需连接钱包。发布体验时再连接。"}</span></div>
     </div>
     <footer className="onboarding-footer">
       <div>{step === 1 ? <button className="onboarding-back" disabled={busy} onClick={() => { setStep(0); setError(""); }}><ArrowLeft size={15} />上一步</button> : <span>从一个好发现开始。</span>}</div>

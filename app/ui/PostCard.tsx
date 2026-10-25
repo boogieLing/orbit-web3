@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Bookmark, ThumbsUp, EyeOff, ArrowUpRight, Pencil, Trash2, Link2, Check, Copy } from "lucide-react";
-import type { AppInfo, Post } from "./api";
+import type { AppInfo, InteractionRecord, Post } from "./api";
 import { api, dateLabel, errorText, mutation, shortAddress } from "./api";
 import { AppMark, Busy, ExternalLink, Modal, Notice, SourceTag, categoryName } from "./shared";
+import InteractionPicker from "./InteractionPicker";
 
 type Actions = { onOpen: (post: Post) => void; onBookmark: (post: Post) => void; onHelpful: (post: Post) => void; onHide: (post: Post) => void; pending: string | null };
 
@@ -34,32 +35,33 @@ export default function PostCard({ post, app, onOpen, onBookmark, onHelpful, onH
 }
 
 // 展示完整内容、资料来源和凭据结果，并管理作者操作。
-export function PostDetail({ post, app, onClose, onBookmark, onHelpful, onEdit, onDelete, onUpdate, pending }: {
+export function PostDetail({ post, app, onClose, onBookmark, onHelpful, onEdit, onDelete, onUpdate, pending, experience = false, records = [] }: {
   post: Post; app?: AppInfo; onClose: () => void; onBookmark: (post: Post) => void; onHelpful: (post: Post) => void;
-  onEdit: (post: Post) => void; onDelete: (post: Post) => Promise<void>; onUpdate: (post: Post) => void; pending: string | null;
+  onEdit: (post: Post) => void; onDelete: (post: Post) => Promise<void>; onUpdate: (post: Post) => void; pending: string | null; experience?: boolean; records?: InteractionRecord[];
 }) {
   const [hash, setHash] = useState(post.tx_hash || "");
+  const [recordID, setRecordID] = useState(post.interaction?.id || "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [copied, setCopied] = useState(false);
   // 按当前交易哈希手动请求核对，保留服务端返回的完整状态。
   const verify = async () => {
-    if (!/^0x[0-9a-f]{64}$/i.test(hash)) { setError("请填写完整的 Ethereum 交易哈希。"); return; }
+    if (experience ? !recordID : !/^0x[0-9a-f]{64}$/i.test(hash)) { setError(experience ? "请选择交互记录。" : "请填写完整的 Ethereum 交易哈希。"); return; }
     // 每次核对只发出一次请求；失败保留哈希，供作者自行决定重试。
     setBusy(true); setError("");
-    try { const result = await api<{ post: Post }>(`/posts/${post.id}/verify`, mutation("POST", { tx_hash: hash })); onUpdate(result.post); }
+    try { const result = await api<{ post: Post }>(`/posts/${post.id}/verify`, mutation("POST", experience ? { record_id: recordID } : { tx_hash: hash })); onUpdate(result.post); }
     catch (verifyError) { setError(errorText(verifyError)); }
     finally { setBusy(false); }
   };
   // 删除作者自己的体验，失败时保留详情与错误说明。
   const remove = async () => { setBusy(true); setError(""); try { await onDelete(post); } catch (deleteError) { setError(errorText(deleteError)); setBusy(false); } };
-  const statuses = { none: "尚未附加交互凭据", pending: "交易等待进一步确认", verified: "交互凭据已核对", unavailable: "数据源暂时无法查询", rejected: "这笔交易未通过核对" };
+  const statuses = { recorded: "交互记录已关联", none: "尚未附加交互凭据", pending: "交易等待进一步确认", verified: "交互凭据已核对", unavailable: "数据源暂时无法查询", rejected: "这笔交易未通过核对" };
   return <Modal title={post.kind === "reference" ? "资料笔记" : "使用体验"} onClose={onClose} wide busy={busy}>
     <article className="detail-article"><div className="detail-app"><AppMark app={app} large /><div><strong>{app?.name || "应用"}</strong><span>{app ? categoryName(app.category) : "体验记录"}</span></div><SourceTag post={post} /></div><h1>{post.title}</h1><div className="detail-byline"><span>{post.kind === "reference" ? "官方资料整理" : post.author.name}</span>{post.author.wallet && post.kind !== "reference" && <code>{shortAddress(post.author.wallet)}</code>}<span>{dateLabel(post.created_at)}</span></div>
       {post.kind === "reference" && <div className="reference-disclaimer"><Pencil size={15} /><p>这是一则带来源的资料笔记，用于了解应用，不代表任何用户的实际使用体验。</p></div>}
       <div className="article-body">{post.body.split(/\n\n+/).map((paragraph, index) => <p key={index}>{paragraph}</p>)}</div><div className="post-tags">{post.tags.map(tag => <span key={tag}>{tag}</span>)}</div>
-      {post.kind === "reference" ? <div className="source-box"><BookSource /><span>原始资料</span><ExternalLink href={post.source_url || app?.source_url}>阅读来源</ExternalLink></div> : <section className="proof-box"><div className="proof-box-heading"><Link2 size={18} /><strong>{statuses[post.proof_status]}</strong>{post.proof_status === "verified" && <Check size={18} />}</div><p>{post.proof_message || "可核对交易发送者、目标合约、执行结果与确认深度。"}</p><small>仅说明钱包与应用的这次交互，不评价应用安全或内容质量。</small>{post.tx_hash && /^0x[0-9a-f]{64}$/i.test(post.tx_hash) && <div className="hash-row"><ExternalLink href={`https://etherscan.io/tx/${post.tx_hash}`}>{shortAddress(post.tx_hash)}</ExternalLink><button className="icon-button" aria-label="复制交易哈希" onClick={() => void navigator.clipboard.writeText(post.tx_hash).then(() => setCopied(true)).catch(() => setError("复制未完成，请手动选择交易哈希。"))}>{copied ? <Check size={14} /> : <Copy size={14} />}</button></div>}{post.owned && <div className="proof-input"><label htmlFor="proof-hash">交易哈希</label><div><input id="proof-hash" className="mono" value={hash} onChange={event => setHash(event.target.value.trim())} placeholder="0x…" maxLength={66} disabled={busy} /><button className="secondary-button" onClick={() => void verify()} disabled={busy || !hash}>{busy ? <Busy /> : post.tx_hash ? "重新核对" : "核对凭据"}</button></div></div>}</section>}
+      {post.kind === "reference" ? <div className="source-box"><BookSource /><span>原始资料</span><ExternalLink href={post.source_url || app?.source_url}>阅读来源</ExternalLink></div> : experience ? <section className="proof-box interaction-summary"><div className="proof-box-heading"><Link2 size={18} /><strong>{post.interaction ? "交互记录已关联" : "把使用过程也留下来"}</strong>{post.interaction && <Check size={18} />}</div>{post.interaction ? <><h3>{post.interaction.title}</h3><p>{post.interaction.detail}</p><small>{dateLabel(post.interaction.occurred_at)} · 记录编号 {post.interaction.id}</small></> : <p>选择对应的操作记录，让这篇体验更容易回顾。</p>}{post.owned && <><InteractionPicker records={records} appID={post.app_id} value={recordID} onChange={setRecordID} disabled={busy} /><button className="button secondary" onClick={() => void verify()} disabled={busy || !recordID}>{busy ? <Busy label="正在关联" /> : post.interaction ? "更新关联记录" : "关联记录"}</button></>}</section> : <section className="proof-box"><div className="proof-box-heading"><Link2 size={18} /><strong>{statuses[post.proof_status]}</strong>{post.proof_status === "verified" && <Check size={18} />}</div><p>{post.proof_message || "可核对交易发送者、目标合约、执行结果与确认深度。"}</p><small>仅说明钱包与应用的这次交互，不评价应用安全或内容质量。</small>{post.tx_hash && /^0x[0-9a-f]{64}$/i.test(post.tx_hash) && <div className="hash-row"><ExternalLink href={`https://etherscan.io/tx/${post.tx_hash}`}>{shortAddress(post.tx_hash)}</ExternalLink><button className="icon-button" aria-label="复制交易哈希" onClick={() => void navigator.clipboard.writeText(post.tx_hash).then(() => setCopied(true)).catch(() => setError("复制未完成，请手动选择交易哈希。"))}>{copied ? <Check size={14} /> : <Copy size={14} />}</button></div>}{post.owned && <div className="proof-input"><label htmlFor="proof-hash">交易哈希</label><div><input id="proof-hash" className="mono" value={hash} onChange={event => setHash(event.target.value.trim())} placeholder="0x…" maxLength={66} disabled={busy} /><button className="secondary-button" onClick={() => void verify()} disabled={busy || !hash}>{busy ? <Busy /> : post.tx_hash ? "重新核对" : "核对凭据"}</button></div></div>}</section>}
       {error && <Notice error>{error}</Notice>}
       <div className="detail-footer"><div className="post-actions"><button className={post.helpful ? "active" : ""} disabled={!!pending} onClick={() => onHelpful(post)}><ThumbsUp size={17} />{post.helpful ? "已标有用" : "对我有用"}{post.helpful_count > 0 && <span>{post.helpful_count}</span>}</button><button className={post.bookmarked ? "active" : ""} disabled={!!pending} onClick={() => onBookmark(post)}><Bookmark size={17} fill={post.bookmarked ? "currentColor" : "none"} />{post.bookmarked ? "已收藏" : "收藏"}</button></div><ExternalLink className="text-link" href={app?.url}>访问应用</ExternalLink></div>
       {post.owned && <div className="owner-actions"><button onClick={() => onEdit(post)} disabled={busy}><Pencil size={14} />编辑体验</button><button className="danger-link" onClick={() => setConfirmDelete(value => !value)} disabled={busy}><Trash2 size={14} />删除</button></div>}{confirmDelete && <div className="delete-confirm"><p>删除后这条体验将不再出现在社区。</p><button onClick={() => setConfirmDelete(false)} disabled={busy}>保留</button><button className="danger-button" disabled={busy} onClick={() => void remove()}>{busy ? <Busy /> : "确认删除"}</button></div>}

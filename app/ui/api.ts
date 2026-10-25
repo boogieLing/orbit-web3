@@ -1,10 +1,12 @@
 export type AppInfo = { id: string; name: string; category: string; summary: string; url: string; chain_id: number; contracts: string[]; tags: string[]; accent: string; mark: string; source_url: string };
-export type User = { id: string; display_name: string; wallet: string | null; preferences: string[] };
-export type Session = { user: User; capabilities: { wallet: boolean; proof: boolean; freeform: boolean }; stats: { reviews: number; verified: number; apps: number } };
+export type User = { id: string; display_name: string; wallet: string | null; preferences: string[]; can_publish: boolean };
+export type InteractionRecord = { id: string; app_id: string; title: string; detail: string; occurred_at: string };
+export type Session = { user: User; capabilities: { wallet: boolean; proof: boolean; freeform: boolean; experience: boolean }; interactions: InteractionRecord[]; stats: { reviews: number; verified: number; apps: number } };
 export type Post = {
   id: string; kind: "review" | "reference"; app_id: string; title: string; body: string;
   sentiment: "positive" | "neutral" | "negative"; tags: string[]; author: { name: string; wallet: string | null };
-  proof_status: "none" | "pending" | "verified" | "unavailable" | "rejected"; proof_message: string;
+  proof_status: "none" | "pending" | "verified" | "unavailable" | "rejected" | "recorded"; proof_message: string;
+  interaction?: InteractionRecord;
   tx_hash: string; proof_checked_at: string; created_at: string; updated_at: string; revision: number;
   helpful_count: number; bookmarked: boolean; helpful: boolean; owned: boolean; source_url?: string; reason?: string;
 };

@@ -42,7 +42,7 @@ func (s *Service) feed(c *call) (int, any, error) {
 	if cursor != "" {
 		return s.feedPage(c, cursor, filterHash)
 	}
-	refs := references()
+	refs := s.libraryPosts()
 	where := ""
 	args := []any{}
 	if category != "all" {
@@ -64,12 +64,22 @@ func (s *Service) feed(c *call) (int, any, error) {
 		}
 	}
 	if search != "" {
-		where += " AND (p.title LIKE ? ESCAPE '\\' OR p.body LIKE ? ESCAPE '\\')"
+		where += " AND (p.title LIKE ? ESCAPE '\\' OR p.body LIKE ? ESCAPE '\\' OR p.app_id=?)"
 		escaped := strings.NewReplacer("\\", "\\\\", "%", "\\%", "_", "\\_").Replace(search)
-		args = append(args, "%"+escaped+"%", "%"+escaped+"%")
+		appID := ""
+		for _, app := range catalog.All() {
+			if strings.EqualFold(app.Name, search) {
+				appID = app.ID
+			}
+		}
+		args = append(args, "%"+escaped+"%", "%"+escaped+"%", appID)
 	}
 	if tab == "verified" {
-		where += " AND p.proof_status='verified'"
+		if s.Config.ExperienceMode {
+			where += " AND p.proof_status IN ('verified','recorded')"
+		} else {
+			where += " AND p.proof_status='verified'"
+		}
 	}
 	if tab == "saved" {
 		where += " AND EXISTS(SELECT 1 FROM actions a WHERE a.user_id=? AND a.post_id=p.id AND a.kind='bookmark')"
@@ -84,10 +94,10 @@ func (s *Service) feed(c *call) (int, any, error) {
 		if category != "all" && app.Category != category {
 			continue
 		}
-		if search != "" && !strings.Contains(strings.ToLower(note.Title+" "+note.Body), strings.ToLower(search)) {
+		if search != "" && !strings.Contains(strings.ToLower(note.Title+" "+note.Body+" "+app.Name+" "+strings.Join(note.Tags, " ")), strings.ToLower(search)) {
 			continue
 		}
-		if tab != "verified" {
+		if tab != "verified" || note.ProofStatus == "recorded" {
 			posts = append(posts, note)
 		}
 	}
@@ -190,7 +200,7 @@ func (s *Service) feedPage(c *call, cursor, filterHash string) (int, any, error)
 	holders := make([]string, len(page))
 	args := make([]any, len(page))
 	byID := map[string]Post{}
-	for _, post := range references() {
+	for _, post := range s.libraryPosts() {
 		byID[post.ID] = post
 	}
 	for i, item := range page {
@@ -222,7 +232,7 @@ func (s *Service) feedPage(c *call, cursor, filterHash string) (int, any, error)
 		if c.url.Query().Get("tab") == "saved" && !post.Bookmarked {
 			continue
 		}
-		if c.url.Query().Get("tab") == "verified" && post.ProofStatus != "verified" {
+		if c.url.Query().Get("tab") == "verified" && post.ProofStatus != "verified" && !(s.Config.ExperienceMode && post.ProofStatus == "recorded") {
 			continue
 		}
 		if !post.Hidden || c.url.Query().Get("tab") == "saved" {

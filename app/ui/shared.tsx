@@ -23,6 +23,7 @@ export function AppMark({ app, large = false }: { app?: AppInfo; large?: boolean
 // 根据真实内容类型和凭据状态展示不同的出处标签。
 export function SourceTag({ post }: { post: Post }) {
   if (post.kind === "reference") return <span className="source-tag"><BookOpen size={12} />资料笔记</span>;
+  if (post.proof_status === "recorded") return <span className="proof-tag"><Link2 size={12} />交互记录</span>;
   if (post.proof_status === "verified") return <span className="proof-tag"><Link2 size={12} />交互已核对</span>;
   return <span className="review-tag">使用体验</span>;
 }

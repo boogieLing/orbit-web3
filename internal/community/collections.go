@@ -138,7 +138,7 @@ func (s *Service) compileCollection(c *call, input collectionInput) (string, err
 	}
 	// 目录在内存中解析，文章 ID 统一汇成一条有界 SQL。
 	byID := map[string]Post{}
-	for _, post := range references() {
+	for _, post := range s.libraryPosts() {
 		byID[post.ID] = post
 	}
 	seen = map[string]bool{}
@@ -237,6 +237,9 @@ func (s *Service) compose(c *call, current Collection) (int, any, error) {
 	}
 	if !validText(input.Instruction, 2, 1000) {
 		return 0, nil, fail(400, "instruction", "请填写 2–1000 字的调整要求")
+	}
+	if s.Config.ExperienceMode {
+		return s.composeExperience(c, current, input.Instruction)
 	}
 	if s.Config.ComposeURL == "" || s.Config.ComposeKey == "" {
 		return 0, nil, fail(503, "composition_not_configured", "自由创作服务尚未接入；你仍可选择内容、布局和主题创建精选页")

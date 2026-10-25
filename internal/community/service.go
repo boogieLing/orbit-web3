@@ -91,6 +91,7 @@ func (s *Service) route(c *call) (int, any, error) {
 	if sessionErr := s.session(c); sessionErr != nil {
 		return 0, nil, sessionErr
 	}
+	c.user.CanPublish = s.Config.ExperienceMode || c.user.Wallet != nil
 	if c.req.Method != "GET" {
 		if rateErr := s.limit(c, "write:"+c.user.ID, 60); rateErr != nil {
 			return 0, nil, rateErr
@@ -102,7 +103,13 @@ func (s *Service) route(c *call) (int, any, error) {
 		if statsErr != nil {
 			return 0, nil, statsErr
 		}
-		return 200, map[string]any{"user": c.user, "capabilities": map[string]bool{"wallet": true, "proof": true, "freeform": s.Config.ComposeKey != "" && s.Config.ComposeURL != ""}, "stats": map[string]any{"reviews": database.Int(rows[0], "reviews"), "verified": database.Int(rows[0], "verified"), "apps": len(catalog.All())}}, nil
+		records := []InteractionRecord{}
+		count := database.Int(rows[0], "reviews")
+		if s.Config.ExperienceMode {
+			records = interactionRecords()
+			count += len(experienceStories())
+		}
+		return 200, map[string]any{"user": c.user, "capabilities": map[string]bool{"wallet": !s.Config.ExperienceMode, "proof": true, "experience": s.Config.ExperienceMode, "freeform": s.Config.ExperienceMode || s.Config.ComposeKey != "" && s.Config.ComposeURL != ""}, "interactions": records, "stats": map[string]any{"reviews": count, "verified": database.Int(rows[0], "verified"), "apps": len(catalog.All())}}, nil
 	case path == "/apps" && c.req.Method == "GET":
 		return 200, map[string]any{"items": catalog.All()}, nil
 	case path == "/auth/challenge" && c.req.Method == "POST":

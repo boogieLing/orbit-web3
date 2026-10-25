@@ -23,10 +23,11 @@ type Response struct {
 	Body    string            `json:"body"`
 }
 type Config struct {
-	RPCURL       string
-	ComposeURL   string
-	ComposeKey   string
-	ComposeModel string
+	ExperienceMode bool
+	RPCURL         string
+	ComposeURL     string
+	ComposeKey     string
+	ComposeModel   string
 }
 type Service struct {
 	DB     database.DB
@@ -39,34 +40,45 @@ type User struct {
 	DisplayName string   `json:"display_name"`
 	Wallet      *string  `json:"wallet"`
 	Preferences []string `json:"preferences"`
+	CanPublish  bool     `json:"can_publish"`
 }
 type Author struct {
 	Name   string  `json:"name"`
 	Wallet *string `json:"wallet"`
 }
 type Post struct {
-	ID             string   `json:"id"`
-	Kind           string   `json:"kind"`
-	AppID          string   `json:"app_id"`
-	Title          string   `json:"title"`
-	Body           string   `json:"body"`
-	Sentiment      string   `json:"sentiment"`
-	Tags           []string `json:"tags"`
-	Author         Author   `json:"author"`
-	ProofStatus    string   `json:"proof_status"`
-	ProofMessage   string   `json:"proof_message"`
-	TxHash         string   `json:"tx_hash"`
-	ProofCheckedAt string   `json:"proof_checked_at"`
-	CreatedAt      string   `json:"created_at"`
-	UpdatedAt      string   `json:"updated_at"`
-	Revision       int      `json:"revision"`
-	HelpfulCount   int      `json:"helpful_count"`
-	Bookmarked     bool     `json:"bookmarked"`
-	Helpful        bool     `json:"helpful"`
-	Owned          bool     `json:"owned"`
-	SourceURL      string   `json:"source_url,omitempty"`
-	Reason         string   `json:"reason,omitempty"`
-	Hidden         bool     `json:"-"`
+	ID             string             `json:"id"`
+	Kind           string             `json:"kind"`
+	AppID          string             `json:"app_id"`
+	Title          string             `json:"title"`
+	Body           string             `json:"body"`
+	Sentiment      string             `json:"sentiment"`
+	Tags           []string           `json:"tags"`
+	Author         Author             `json:"author"`
+	ProofStatus    string             `json:"proof_status"`
+	ProofMessage   string             `json:"proof_message"`
+	TxHash         string             `json:"tx_hash"`
+	ProofCheckedAt string             `json:"proof_checked_at"`
+	CreatedAt      string             `json:"created_at"`
+	UpdatedAt      string             `json:"updated_at"`
+	Revision       int                `json:"revision"`
+	HelpfulCount   int                `json:"helpful_count"`
+	Bookmarked     bool               `json:"bookmarked"`
+	Helpful        bool               `json:"helpful"`
+	Owned          bool               `json:"owned"`
+	SourceURL      string             `json:"source_url,omitempty"`
+	Reason         string             `json:"reason,omitempty"`
+	Hidden         bool               `json:"-"`
+	Interaction    *InteractionRecord `json:"interaction,omitempty"`
+}
+
+// InteractionRecord 描述站内可关联的操作记录，不包含资产或链上认证声明。
+type InteractionRecord struct {
+	ID         string `json:"id"`
+	AppID      string `json:"app_id"`
+	Title      string `json:"title"`
+	Detail     string `json:"detail"`
+	OccurredAt string `json:"occurred_at"`
 }
 type Collection struct {
 	ID           string   `json:"id"`

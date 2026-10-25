@@ -38,7 +38,7 @@ func main() {
 		slog.Error("migrate", "error", migrationErr)
 		return
 	}
-	config := community.Config{RPCURL: os.Getenv("ETH_RPC_URL"), ComposeURL: os.Getenv("COMPOSE_URL"), ComposeKey: os.Getenv("COMPOSE_API_KEY"), ComposeModel: os.Getenv("COMPOSE_MODEL")}
+	config := community.Config{ExperienceMode: os.Getenv("USEDIT_EXPERIENCE_MODE") != "false", RPCURL: os.Getenv("ETH_RPC_URL"), ComposeURL: os.Getenv("COMPOSE_URL"), ComposeKey: os.Getenv("COMPOSE_API_KEY"), ComposeModel: os.Getenv("COMPOSE_MODEL")}
 	if config.RPCURL == "" {
 		config.RPCURL = "https://ethereum-rpc.publicnode.com"
 	}

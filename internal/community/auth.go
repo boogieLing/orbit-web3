@@ -20,7 +20,7 @@ func userFromRow(row database.Row) User {
 	if value := database.String(row, "wallet"); value != "" {
 		address = &value
 	}
-	return User{ID: database.String(row, "id"), DisplayName: database.String(row, "display_name"), Wallet: address, Preferences: list(database.String(row, "preferences"))}
+	return User{ID: database.String(row, "id"), DisplayName: database.String(row, "display_name"), Wallet: address, CanPublish: address != nil, Preferences: list(database.String(row, "preferences"))}
 }
 
 // session 验证会话及平台身份绑定；新访客以游客身份保存自己的内容。
