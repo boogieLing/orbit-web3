@@ -34,7 +34,7 @@ export function ExternalLink({ href, children, className = "" }: { href?: string
 }
 
 // 提供键盘焦点约束、关闭控制和滚动锁定的可访问弹窗。
-export function Modal({ title, children, onClose, wide = false, full = false, busy = false }: { title: string; children: ReactNode; onClose: () => void; wide?: boolean; full?: boolean; busy?: boolean }) {
+export function Modal({ title, children, onClose, wide = false, full = false, busy = false, className = "" }: { title: string; children: ReactNode; onClose: () => void; wide?: boolean; full?: boolean; busy?: boolean; className?: string }) {
   const titleID = useId();
   const root = useRef<HTMLDivElement>(null);
   const close = useRef(onClose);
@@ -59,7 +59,7 @@ export function Modal({ title, children, onClose, wide = false, full = false, bu
     document.addEventListener("keydown", keydown);
     return () => { document.body.style.overflow = oldOverflow; document.removeEventListener("keydown", keydown); previous?.focus(); };
   }, []);
-  return <div className="modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget && !busy) onClose(); }}><section ref={root} className={`modal ${wide ? "wide" : ""} ${full ? "full" : ""}`} role="dialog" aria-modal="true" aria-labelledby={titleID}><header className="modal-header"><h2 id={titleID}>{title}</h2><button className="icon-button" aria-label="关闭弹窗" disabled={busy} onClick={onClose}><X size={20} /></button></header>{children}</section></div>;
+  return <div className="modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget && !busy) onClose(); }}><section ref={root} className={`modal ${wide ? "wide" : ""} ${full ? "full" : ""} ${className}`} role="dialog" aria-modal="true" aria-labelledby={titleID}><header className="modal-header"><h2 id={titleID}>{title}</h2><button className="icon-button" aria-label="关闭弹窗" disabled={busy} onClick={onClose}><X size={20} /></button></header>{children}</section></div>;
 }
 
 // 以状态或错误语义展示可读反馈，支持辅助阅读工具。

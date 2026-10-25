@@ -4,7 +4,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowRight, ArrowUpRight, BookOpen, Bookmark, Clock3, Compass, FileText, FolderHeart, Link2, ListFilter, LoaderCircle, Menu, Pencil, Plus, Search, Settings2, SlidersHorizontal, Wallet, X } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUpRight, BookOpen, Bookmark, Clock3, CircleHelp, Compass, FileText, FolderHeart, Link2, ListFilter, LoaderCircle, Menu, Pencil, Plus, Search, Settings2, SlidersHorizontal, Wallet, X } from "lucide-react";
 import { api, dateLabel, errorText, mutation, shortAddress, signIn } from "./api";
 import type { AppInfo, Collection, Feed, Post, Session, Tab, User } from "./api";
 import { AppMark, Busy, categories, categoryName, Empty, ExternalLink, Logo, Modal, Notice, Toast } from "./shared";
@@ -13,6 +13,7 @@ import PostEditor, { blankDraft } from "./PostEditor";
 import type { PostDraft } from "./PostEditor";
 import CollectionEditor from "./CollectionEditor";
 import Settings from "./Settings";
+import Onboarding from "./Onboarding";
 
 type View = "discover" | "apps" | "collections" | "posts";
 type Feedback = { text: string; action?: { label: string; run: () => void } };
@@ -47,6 +48,9 @@ export default function Community() {
   const [collectionPosts, setCollectionPosts] = useState<Post[]>([]);
   const [settings, setSettings] = useState(false);
   const [help, setHelp] = useState(false);
+  const [guideRequest, setGuideRequest] = useState(0);
+  const [guideNavigation, setGuideNavigation] = useState(0);
+  const focusedGuideNavigation = useRef(0);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [walletBusy, setWalletBusy] = useState(false);
   const [pending, setPending] = useState<string | null>(null);
@@ -94,6 +98,23 @@ export default function Community() {
     }).catch(reason => { if (!controller.signal.aborted) setFeedError(errorText(reason)); }).finally(() => { if (!controller.signal.aborted && generation === loadGeneration.current) setLoadedKey(requestKey); });
     return () => controller.abort();
   }, [userID, view, tab, category, query, reload, requestKey]);
+
+  // 引导结束后直接定位到可操作内容，等待推荐加载完成再交付键盘焦点。
+  useEffect(() => {
+    if (guideNavigation === focusedGuideNavigation.current || loading) return;
+    const content = document.getElementById("community-content");
+    content?.focus({ preventScroll: true });
+    content?.scrollIntoView({ block: "start", behavior: "instant" });
+    focusedGuideNavigation.current = guideNavigation;
+  }, [guideNavigation, loading]);
+
+  // 手动重开引导时关闭菜单，保持一个明确的前台流程。
+  const reopenGuide = () => { setMobileMenu(false); setHelp(false); setGuideRequest(value => value + 1); };
+  // 清除旧搜索条件后进入引导选择的去向，避免新用户落入空搜索结果。
+  const startExploring = (destination: "apps" | "discover") => {
+    setView(destination); setTab("for-you"); setCategory("all"); setQuery(""); setSearch("");
+    setFeedError(""); setGuideNavigation(value => value + 1);
+  };
 
   // 更新业务身份或偏好，并重新读取该身份可访问的内容。
   const updateUser = (user: User) => { setSession(value => value ? { ...value, user } : value); setReload(value => value + 1); };
@@ -200,7 +221,7 @@ export default function Community() {
   const searchSubmit = (event: React.FormEvent) => { event.preventDefault(); setQuery(search.trim()); if (!["discover", "apps"].includes(view)) setView("discover"); };
 
   return <div className="site-shell">
-    <header className="site-header"><div className="header-inner"><button className="brand-button" aria-label="用过再说首页" onClick={() => { navigate("discover"); setTab("for-you"); setCategory("all"); setQuery(""); setSearch(""); }}><Logo /></button><nav className="desktop-nav" aria-label="主导航"><button className={view === "discover" ? "active" : ""} onClick={() => navigate("discover")}>发现</button><button className={view === "apps" ? "active" : ""} onClick={() => navigate("apps")}>应用目录</button><button className={view === "collections" ? "active" : ""} onClick={() => navigate("collections")}>我的精选</button></nav><form className="header-search" onSubmit={searchSubmit}><Search size={17} /><input aria-label="搜索应用、体验和标签" placeholder="搜索应用、体验…" value={search} onChange={event => setSearch(event.target.value)} /><button type="submit" aria-label="搜索"><ArrowRight size={15} /></button></form><div className="header-actions">{session?.user.wallet ? <button className="account-button" disabled={booting} onClick={() => setSettings(true)}><span>{session.user.display_name.slice(0, 1)}</span><span>{shortAddress(session.user.wallet)}</span></button> : <button className="wallet-button" aria-label={walletBusy ? "等待钱包签名" : "连接钱包"} disabled={walletBusy || !session} onClick={() => void connectWallet().catch(reason => notify(errorText(reason)))}>{walletBusy ? <LoaderCircle size={17} className="spin" /> : <Wallet size={17} />}<span>{walletBusy ? "等待钱包" : "连接钱包"}</span></button>}<button className="button primary write-button" disabled={!session} onClick={() => newPost()}><Pencil size={15} />写体验</button><button className="icon-button mobile-menu-button" aria-expanded={mobileMenu} aria-label="展开导航" onClick={() => setMobileMenu(value => !value)}>{mobileMenu ? <X size={21} /> : <Menu size={21} />}</button></div></div>{mobileMenu && <nav className="mobile-nav"><button disabled={!session} onClick={() => newPost()}><Pencil size={16} />写体验</button><button onClick={() => { navigate("posts"); }}><FileText size={16} />我的体验</button><button onClick={() => navigate("discover")}><Compass size={16} />发现</button><button onClick={() => navigate("apps")}><BookOpen size={16} />应用目录</button><button onClick={() => navigate("collections")}><FolderHeart size={16} />我的精选</button><button disabled={!session} onClick={() => { setSettings(true); setMobileMenu(false); }}><Settings2 size={16} />阅读偏好</button></nav>}</header>
+    <header className="site-header"><div className="header-inner"><button className="brand-button" aria-label="用过再说首页" onClick={() => { navigate("discover"); setTab("for-you"); setCategory("all"); setQuery(""); setSearch(""); }}><Logo /></button><nav className="desktop-nav" aria-label="主导航"><button className={view === "discover" ? "active" : ""} onClick={() => navigate("discover")}>发现</button><button className={view === "apps" ? "active" : ""} onClick={() => navigate("apps")}>应用目录</button><button className={view === "collections" ? "active" : ""} onClick={() => navigate("collections")}>我的精选</button></nav><form className="header-search" onSubmit={searchSubmit}><Search size={17} /><input aria-label="搜索应用、体验和标签" placeholder="搜索应用、体验…" value={search} onChange={event => setSearch(event.target.value)} /><button type="submit" aria-label="搜索"><ArrowRight size={15} /></button></form><div className="header-actions">{session?.user.wallet ? <button className="account-button" disabled={booting} onClick={() => setSettings(true)}><span>{session.user.display_name.slice(0, 1)}</span><span>{shortAddress(session.user.wallet)}</span></button> : <button className="wallet-button" aria-label={walletBusy ? "等待钱包签名" : "连接钱包"} disabled={walletBusy || !session} onClick={() => void connectWallet().catch(reason => notify(errorText(reason)))}>{walletBusy ? <LoaderCircle size={17} className="spin" /> : <Wallet size={17} />}<span>{walletBusy ? "等待钱包" : "连接钱包"}</span></button>}<button className="button primary write-button" disabled={!session} onClick={() => newPost()}><Pencil size={15} />写体验</button><button className="icon-button mobile-menu-button" aria-expanded={mobileMenu} aria-label="展开导航" onClick={() => setMobileMenu(value => !value)}>{mobileMenu ? <X size={21} /> : <Menu size={21} />}</button></div></div>{mobileMenu && <nav className="mobile-nav"><button disabled={!session} onClick={() => newPost()}><Pencil size={16} />写体验</button><button onClick={() => { navigate("posts"); }}><FileText size={16} />我的体验</button><button onClick={() => navigate("discover")}><Compass size={16} />发现</button><button onClick={() => navigate("apps")}><BookOpen size={16} />应用目录</button><button onClick={() => navigate("collections")}><FolderHeart size={16} />我的精选</button><button disabled={!session} onClick={() => { setSettings(true); setMobileMenu(false); }}><Settings2 size={16} />阅读偏好</button><button disabled={!session} onClick={reopenGuide}><CircleHelp size={16} />新手引导</button></nav>}</header>
 
     {booting && !session ? <main className="boot-state"><Busy label="正在打开社区" /><p>好内容，值得多等一小会。</p></main> : bootError ? <main className="boot-state"><Notice error>{bootError}</Notice><button className="button primary" onClick={() => { setBootError(""); setReload(value => value + 1); }}>重新连接</button></main> : session && <>
       <div className="product-layout">
@@ -211,16 +232,17 @@ export default function Community() {
           <button className={view === "discover" && tab === "saved" ? "selected" : ""} aria-label="我的收藏" title="我的收藏" onClick={() => { navigate("discover"); setTab("saved"); setCategory("all"); setQuery(""); setSearch(""); }}><Bookmark size={20} /><span>收藏</span></button>
           <button className={view === "collections" ? "selected" : ""} aria-label="我的精选" title="我的精选" onClick={() => navigate("collections")}><FolderHeart size={21} /><span>精选</span></button>
           <button className={view === "posts" ? "selected" : ""} aria-label="我的体验" title="我的体验" onClick={() => navigate("posts")}><FileText size={20} /><span>体验</span></button>
+          <button aria-label="新手引导" title="新手引导" onClick={reopenGuide}><CircleHelp size={20} /><span>引导</span></button>
           <button className="dock-settings" aria-label="阅读偏好" title="阅读偏好" onClick={() => setSettings(true)}><SlidersHorizontal size={20} /><span>偏好</span></button>
         </aside>
         <main className={`product-main ${view === "discover" && !showHero ? "focused-discovery" : ""}`}>
           {showHero && <section className="discovery-stage" aria-label="发现链上应用">
             <img className="portal-art" src="/art/portal.webp" alt="银色折叠环与透光的绿色内缘" width={1536} height={1024} fetchPriority="high" />
             <div className="stage-copy">
-              <div className="eyebrow">MAKE YOUR NEXT DISCOVERY</div>
-              <h1>链上，<br />总有<span>新发现。</span></h1>
-              <p>找到值得一试的应用，<br />把用过的体验，变成下一次选择的依据。</p>
-              <div className="stage-actions"><button className="button primary" onClick={() => navigate("apps")}>探索应用<ArrowUpRight size={18} /></button><button className="stage-secondary" onClick={() => setSettings(true)}>找到我的兴趣<SlidersHorizontal size={15} /></button></div>
+              <div className="eyebrow">你的 WEB3 应用发现入口</div>
+              <h1>发现值得用的<br /><span>Web3 应用。</span></h1>
+              <p>按兴趣找应用，看使用体验与资料笔记，<br />把有用的内容收藏，整理成自己的精选页。</p>
+              <div className="stage-actions"><button className="button primary" onClick={() => navigate("apps")}>探索应用<ArrowUpRight size={18} /></button><button className="stage-secondary" onClick={reopenGuide}>第一次来？从这里开始<CircleHelp size={15} /></button></div>
             </div>
           </section>}
 
@@ -236,7 +258,7 @@ export default function Community() {
             {view === "collections" ? <img className="collection-art" src="/art/collection.webp" alt="层叠的金属与玻璃收藏册" width={960} height={640} /> : view === "posts" ? <button className="button primary" onClick={() => newPost()}><Pencil size={16} />写新体验</button> : <span className="catalog-count">{session.stats.apps}<small>个应用可探索</small></span>}
           </section>}
 
-          <section className="main-content" aria-label={view === "discover" ? "社区内容" : view === "apps" ? "应用目录" : view === "posts" ? "我的体验" : "我的精选"}>
+          <section id="community-content" tabIndex={-1} className="main-content" aria-label={view === "discover" ? "社区内容" : view === "apps" ? "应用目录" : view === "posts" ? "我的体验" : "我的精选"}>
             {view === "discover" && <div className="content-heading"><div><h2>{tab === "saved" ? "留给下次的好发现" : query ? "找到相关内容" : "发现与你合拍的应用"}</h2><p>{tab === "saved" ? "你收藏的内容，都在这里。" : "从应用资料到使用体验，按你的兴趣探索。"}</p></div><button className="button quiet preferences-button" onClick={() => setSettings(true)}><ListFilter size={16} />调整偏好</button></div>}
             {["discover", "apps"].includes(view) && <nav className="category-nav" aria-label="应用分类">{categories.map(item => <button key={item.id} aria-pressed={category === item.id} className={category === item.id ? "active" : ""} onClick={() => setCategory(item.id)}><item.Icon size={16} />{item.label}</button>)}</nav>}
             {view === "discover" && <div className="feed-tabs" role="tablist" aria-label="内容排序">{tabs.map(item => <button key={item.id} role="tab" aria-selected={tab === item.id} className={tab === item.id ? "active" : ""} onClick={() => setTab(item.id)}><item.Icon size={15} />{item.title}</button>)}</div>}
@@ -251,7 +273,7 @@ export default function Community() {
           </section>
 
           {showHero && <section className="personal-space"><img src="/art/collection.webp" alt="金属与玻璃叠层" width={960} height={640} loading="lazy" /><div><FolderHeart size={25} /><h2>下一次发现，<br />从你的收藏开始。</h2><p>喜欢的应用、有用的体验。<br />挑选、整理，做成自己的精选页。</p><button className="button quiet" onClick={() => navigate("collections")}>进入我的精选<ArrowUpRight size={16} /></button></div></section>}
-          <footer className="site-footer"><Logo /><p>好不好用，用过再说。</p><button onClick={() => setHelp(true)}>关于社区<ArrowUpRight size={14} /></button></footer>
+          <footer className="site-footer"><Logo /><p>好不好用，用过再说。</p><div className="footer-links"><button onClick={reopenGuide}>新手引导<CircleHelp size={14} /></button><button onClick={() => setHelp(true)}>关于社区<ArrowUpRight size={14} /></button></div></footer>
         </main>
       </div>
     </>}
@@ -262,6 +284,7 @@ export default function Community() {
     {settings && session && <Settings user={session.user} apps={apps} onUser={updateUser} onClose={() => setSettings(false)} onLogout={logout} connectWallet={connectWallet} />}
     {collectionEditor && session && <CollectionEditor initial={editingCollection} apps={apps} posts={collectionPosts} freeform={session.capabilities.freeform} onSaved={saveCollection} onClose={() => setCollectionEditor(false)} />}
     {help && <Modal title="关于用过再说" onClose={() => setHelp(false)}><div className="about-content"><div className="eyebrow">EXPERIENCE, WITH CONTEXT.</div><h2>先看清楚，<br />再做自己的选择。</h2><p>用过再说是一个分享链上应用使用体验的社区。欢迎聊具体步骤、遇到的问题，以及值得留下的小发现。</p><section><h3><Pencil size={17} />使用体验与资料笔记</h3><p>使用体验由连接钱包的用户发布。资料笔记根据官方资料整理，始终附带来源标识，不计入使用体验数量。</p></section><section><h3><Link2 size={17} />交互凭据说明什么？</h3><p>核对范围包括 Ethereum 主网的交易发送者、目标合约、执行结果和确认深度。凭据仅表明这次交互发生过，不是对人的身份、应用安全或内容质量的认证。</p></section><section><h3><SlidersHorizontal size={17} />推荐如何参考我的反馈？</h3><p>阅读偏好、收藏、有用标记和不感兴趣反馈共同帮助整理内容顺序。你随时可以查看最新分享，或修改阅读偏好。</p></section><section><h3><Wallet size={17} />什么时候需要钱包？</h3><p>发布体验时需要签名登录。浏览、收藏和创建精选页无需连接钱包。签名登录不要求转账；关闭钱包操作后，正在编辑的体验会留在本次页面中。</p></section></div></Modal>}
+    {session && <Onboarding key={guideRequest} request={guideRequest} user={session.user} apps={apps} onUser={updateUser} onStart={startExploring} />}
     {toast && <Toast message={toast.text} action={toast.action} onClose={() => setToast(null)} />}
   </div>;
 }
