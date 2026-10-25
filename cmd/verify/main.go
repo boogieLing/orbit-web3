@@ -178,7 +178,7 @@ func (browser *visitor) request(ctx context.Context, method, path string, input 
 	}
 	if browser.owner.serviceToken != "" {
 		// 仅在明确选定站点的请求头中携带访问凭据，不复制到 URL 或正文。
-		request.Header.Set("OAI-Sites-Authorization", browser.owner.serviceToken)
+		request.Header.Set("OAI-Sites-Authorization", "Bearer "+browser.owner.serviceToken)
 	}
 	if key != "" {
 		request.Header.Set("Idempotency-Key", key)
