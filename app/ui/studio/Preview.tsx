@@ -34,12 +34,12 @@ export const Preview=forwardRef<PreviewHandle,{id:string;version:number;locked:b
   return()=>{alive=false;controller.abort();writer.current?.dispose();writer.current=null};
  },[id,version,refresh]);
  useEffect(()=>{
-  // 当前 iframe 窗口、opaque origin 与随机通道必须同时匹配。
-  const receive=(event:MessageEvent)=>{if(event.source!==frame.current?.contentWindow||event.origin!=='null'||event.data?.channel!==channel.current)return;if(event.data.type==='studio:state'&&validState(event.data.data))writer.current?.update(event.data.data);if(event.data.type==='studio:error'&&typeof event.data.message==='string')setError(event.data.message.slice(0,200))};
+  // 当前 iframe 窗口、opaque origin 与随机通道必须同时匹配；历史预览也禁止脚本自动写回。
+  const receive=(event:MessageEvent)=>{if(event.source!==frame.current?.contentWindow||event.origin!=='null'||event.data?.channel!==channel.current)return;if(event.data.type==='studio:state'&&!historical&&validState(event.data.data))writer.current?.update(event.data.data);if(event.data.type==='studio:error'&&typeof event.data.message==='string')setError(event.data.message.slice(0,200))};
   // 浏览器退出前提示尚未完成的数据持久化。
   const closing=(event:BeforeUnloadEvent)=>{if(writer.current?.pending||writer.current?.saving){event.preventDefault();event.returnValue=''}};
   window.addEventListener('message',receive);window.addEventListener('beforeunload',closing);return()=>{window.removeEventListener('message',receive);window.removeEventListener('beforeunload',closing)};
- },[]);
+ },[historical]);
  // 重新载入前先保存，发生冲突时由用户决定是否读取服务端状态。
  const reload=async()=>{try{await writer.current?.flush();setRefresh(value=>value+1)}catch(reason){setError(errorText(reason))}};
  return <section className="studio-preview" aria-label="应用预览">
