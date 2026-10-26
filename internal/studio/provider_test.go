@@ -26,6 +26,9 @@ func TestBuildResponseBoundary(t *testing.T) {
 		{"缺少文件", "{}", "stop", 200, false},
 		{"网络访问", strings.Replace(validDocument, "console.log('ready')", "fetch('https://example.com')", 1), "stop", 200, false},
 		{"外部脚本", strings.Replace(validDocument, "<script>", `<script src="https://example.com/a.js">`, 1), "stop", 200, false},
+		{"系统确认框", strings.Replace(validDocument, "console.log('ready')", "window.confirm('删除？')", 1), "stop", 200, false},
+		{"系统输入框", strings.Replace(validDocument, "console.log('ready')", "prompt('名称')", 1), "stop", 200, false},
+		{"系统提示框", strings.Replace(validDocument, "console.log('ready')", "alert('完成')", 1), "stop", 200, false},
 		{"余额不足", validDocument, "stop", 402, false},
 	}
 	for _, item := range cases {

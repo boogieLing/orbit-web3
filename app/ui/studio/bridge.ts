@@ -39,6 +39,8 @@ export function createPreview(html: string, initial: Record<string, string>, cha
       clear(){for(const key of Object.keys(data)) delete data[key];send()}
     };
     Object.defineProperty(window,'localStorage',{value:storage,writable:false,configurable:false});
+    // 旧版本若使用系统弹窗，给出可修复的错误，不静默吞掉用户操作。
+    for(const name of ['alert','confirm','prompt']) Object.defineProperty(window,name,{value:()=>{throw new Error('请继续修改：将系统弹窗改为页面内确认或撤销按钮。')},writable:false,configurable:false});
     addEventListener('error', event => parent.postMessage({type:'studio:error',channel,message:String(event.message).slice(0,100)},'*'));
     addEventListener('unhandledrejection', () => parent.postMessage({type:'studio:error',channel,message:'应用内有未处理的异步操作，请检查源码或继续修改。'},'*'));
   })();`;

@@ -15,10 +15,12 @@ var (
 	openingBody   = regexp.MustCompile(`(?i)<body(?:\s[^>]*)?>`)
 	inlineScript  = regexp.MustCompile(`(?i)<script(?:\s[^>]*)?>`)
 	blockedTags   = regexp.MustCompile(`(?i)<\s*(?:iframe|frame|frameset|object|embed|base)\b`)
+	markupTag     = regexp.MustCompile(`(?s)<[A-Za-z][^>]*>`)
 	resourceAttr  = regexp.MustCompile(`(?i)\b(?:src|href|action|formaction|poster|srcset)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))`)
 	cssURL        = regexp.MustCompile(`(?i)url\s*\(\s*['"]?\s*([^)'"\s]+)`)
 	cssImport     = regexp.MustCompile(`(?i)@import\b`)
 	refreshMeta   = regexp.MustCompile(`(?i)<meta\b[^>]*http-equiv\s*=\s*["']?\s*refresh\b`)
+	nativeDialog  = regexp.MustCompile(`\b(?:alert|confirm|prompt)\s*\(`)
 	networkCall   = regexp.MustCompile(`(?i)\b(?:fetch|XMLHttpRequest|WebSocket|EventSource|sendBeacon|importScripts)\s*\(|\bimport\s*(?:\(|[^;\n]*\bfrom\b)|\bnavigator\s*\.\s*serviceWorker\b`)
 )
 
@@ -36,6 +38,10 @@ func Validate(raw string) (string, error) {
 	decoded := html.UnescapeString(document)
 	if blockedTags.MatchString(decoded) || refreshMeta.MatchString(decoded) || cssImport.MatchString(decoded) || networkCall.MatchString(decoded) || !localResources(decoded) {
 		return "", rejected("应用包含外部资源或不支持的执行方式，请改用自包含页面。")
+	}
+	// 原生确认框在隔离预览中被浏览器禁用，避免保存无法完成关键操作的版本。
+	if nativeDialog.MatchString(decoded) {
+		return "", rejected("应用使用了预览不支持的系统弹窗。请要求改为页面内确认或撤销按钮后重新制作。")
 	}
 	return document, nil
 }
@@ -75,14 +81,25 @@ func trimFence(document string) string {
 // localResources 只允许内嵌资源和页内锚点。
 func localResources(document string) bool {
 	// 属性与 CSS 两条资源通道使用相同的本地资源约束。
-	for _, attribute := range resourceAttr.FindAllStringSubmatch(document, -1) {
-		value := strings.TrimSpace(attribute[1] + attribute[2] + attribute[3])
-		if value != "" && !strings.HasPrefix(value, "#") && !strings.HasPrefix(value, "data:") && !strings.HasPrefix(value, "blob:") {
+	for _, tag := range markupTag.FindAllString(document, -1) {
+		if !localAttributes(tag) {
 			return false
 		}
 	}
 	for _, resource := range cssURL.FindAllStringSubmatch(document, -1) {
 		if !strings.HasPrefix(resource[1], "data:") && !strings.HasPrefix(resource[1], "blob:") && !strings.HasPrefix(resource[1], "#") {
+			return false
+		}
+	}
+	return true
+}
+
+// localAttributes 仅把标签内的属性当作资源，避免将脚本中的 action 变量误判为表单地址。
+func localAttributes(tag string) bool {
+	// 解码后的属性只允许空值、页内锚点和内嵌资源。
+	for _, attribute := range resourceAttr.FindAllStringSubmatch(tag, -1) {
+		value := strings.TrimSpace(attribute[1] + attribute[2] + attribute[3])
+		if value != "" && !strings.HasPrefix(value, "#") && !strings.HasPrefix(value, "data:") && !strings.HasPrefix(value, "blob:") {
 			return false
 		}
 	}

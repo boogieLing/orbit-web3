@@ -6,7 +6,7 @@
 
 [在线体验](https://usedit-web3.ushouldknowr0.chatgpt.site/) · [源码仓库](https://github.com/boogieLing/orbit-web3) · [完整操作路径](docs/完整体验说明.md)
 
-笔试核心验收从「创作应用」进入；社区推荐、发布、收藏与个人精选继续保留。详见 [应用创作说明](docs/应用创作说明.md)。
+笔试核心验收从「创作应用」进入；社区推荐、发布、收藏与个人精选继续保留。详见 [应用创作说明](docs/应用创作说明.md) 与 [创作工作台使用指引](docs/创作工作台使用指引.md)。
 
 ## 主要流程
 
