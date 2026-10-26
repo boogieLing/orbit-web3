@@ -18,6 +18,7 @@ import (
 	"time"
 	"usedit/internal/community"
 	"usedit/internal/database"
+	"usedit/internal/studio"
 )
 
 // main 初始化持久化并在退出时等待请求完成。
@@ -38,13 +39,13 @@ func main() {
 		slog.Error("migrate", "error", migrationErr)
 		return
 	}
-	config := community.Config{ExperienceMode: os.Getenv("USEDIT_EXPERIENCE_MODE") != "false", RPCURL: os.Getenv("ETH_RPC_URL"), ComposeURL: os.Getenv("COMPOSE_URL"), ComposeKey: os.Getenv("COMPOSE_API_KEY"), ComposeModel: os.Getenv("COMPOSE_MODEL")}
+	config := community.Config{Studio: studio.Config{URL: os.Getenv("STUDIO_URL"), Key: os.Getenv("STUDIO_API_KEY"), Model: os.Getenv("STUDIO_MODEL"), Provider: os.Getenv("STUDIO_PROVIDER")}, ExperienceMode: os.Getenv("USEDIT_EXPERIENCE_MODE") != "false", RPCURL: os.Getenv("ETH_RPC_URL"), ComposeURL: os.Getenv("COMPOSE_URL"), ComposeKey: os.Getenv("COMPOSE_API_KEY"), ComposeModel: os.Getenv("COMPOSE_MODEL")}
 	if config.RPCURL == "" {
 		config.RPCURL = "https://ethereum-rpc.publicnode.com"
 	}
 	service := community.New(db, config)
 	// 原生入口只负责 HTTP 边界，身份、权限和存储规则继续由领域服务执行。
-	server := &http.Server{Addr: *address, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := &http.Server{Addr: *address, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 110 * time.Second, IdleTimeout: 60 * time.Second, Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasPrefix(r.URL.Path, "/api/v1/") {
 			http.NotFound(w, r)
 			return

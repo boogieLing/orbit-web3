@@ -1,14 +1,17 @@
 # Orbit · 引力
 
-发现值得用的 Web3 应用。通过兴趣、收藏和反馈发现 DApp，把使用笔记与交互记录放在一起，再整理成自己的精选页。笔试版本打开即可使用独立社区身份，全部站内流程无需钱包扩展或外部密钥。
+从发现应用到创作应用。Orbit 保留 Web3 应用推荐与社区体验，并提供独立创作工作台：描述需求，通过 DeepSeek 制作可运行的单页应用，连续修改、保存对话与版本、恢复旧代码。访客使用独立身份；创作服务凭据由服务端配置。
 
 业务逻辑使用 Go，同一领域服务支持原生 HTTP + SQLite，以及服务端 WebAssembly + Cloudflare D1。React 负责展示，Worker 负责请求与存储桥接。
 
 [在线体验](https://usedit-web3.ushouldknowr0.chatgpt.site/) · [源码仓库](https://github.com/boogieLing/orbit-web3) · [完整操作路径](docs/完整体验说明.md)
 
-首次打开可按引导选择兴趣，随后体验推荐、发布、收藏和个人精选；在线作品已设置为公开访问。
+笔试核心验收从「创作应用」进入；社区推荐、发布、收藏与个人精选继续保留。详见 [应用创作说明](docs/应用创作说明.md)。
 
 ## 主要流程
+
+- 进入 [创作工作台](https://usedit-web3.ushouldknowr0.chatgpt.site/studio)，描述需求，预览实际产物，继续增加功能或修改样式。
+- 项目、完整需求记录和代码版本持久化；可回退、查看源码、下载独立 HTML。
 
 - 阅读推荐、搜索和分类筛选；收藏、有用反馈、不感兴趣和阅读偏好。
 - 使用独立社区身份发布、编辑、删除自己的体验；可从使用笔记开始填写。
@@ -44,6 +47,10 @@ npm start -- --port 18442
 go run ./cmd/server -addr 127.0.0.1:18441 -db data/usedit.sqlite
 ```
 
+新增工作台迁移为 `drizzle/0001_mature_cerise.sql`。使用相同 `d1 execute` 命令对本地旧库追加执行一次，不重复执行旧迁移。生产发布由 Sites 按迁移记录推进。
+
+本地生产 Worker 读取 `dist/server/.dev.vars`，开发服务读取根目录 `.dev.vars`。两者均保持忽略；构建会重建 `dist/`，不要将凭据放进发布归档。
+
 ## 验证
 
 ```sh
@@ -73,6 +80,10 @@ node scripts/verify-site.mjs
 | `worker` | Sites 请求边界与 Go 运行时桥接 |
 
 ## 配置与边界
+
+- `STUDIO_URL`、`STUDIO_API_KEY`、`STUDIO_MODEL`、`STUDIO_PROVIDER`：独立的应用创作服务。默认接入 DeepSeek Flash，使用 HTTPS `/chat/completions`。密钥只留在服务端；浏览器不接受上游地址或凭据。
+- 每用户 20 个项目、每项目 30 次创作、每用户每分钟 2 次、全站每天 50 次；每次最多输出 12,000 token，90 秒超时。失败不自动重试。
+- 交付范围为单文件 HTML/CSS/JavaScript 应用；网络、外部依赖与链上交易不在生成应用的执行权限内。
 
 `.env.example` 只列配置名。原生 API 从进程环境读取；本地 Worker 可使用忽略的 `.dev.vars`；线上通过 Sites 环境变量管理保存，密钥不进入源码。
 

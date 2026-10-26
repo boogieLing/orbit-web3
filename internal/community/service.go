@@ -134,6 +134,8 @@ func (s *Service) route(c *call) (int, any, error) {
 		return s.postRoute(c, strings.Split(strings.TrimPrefix(path, "/posts/"), "/"))
 	case path == "/feedback" && c.req.Method == "POST":
 		return s.feedback(c)
+	case strings.HasPrefix(path, "/studio/"):
+		return s.studioRoute(c, path)
 	case path == "/collections" || strings.HasPrefix(path, "/collections/"):
 		return s.collectionRoute(c, path)
 	default:

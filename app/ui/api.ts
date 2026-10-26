@@ -24,7 +24,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   const headers = new Headers(options.headers);
   const method = options.method || "GET";
   if (method !== "GET") { headers.set("Content-Type", "application/json"); headers.set("X-UsedIt-Request", "1"); }
-  const timeout = AbortSignal.timeout(path.endsWith("/compose") ? 120000 : 20000);
+  const timeout = AbortSignal.timeout((path.endsWith("/compose") || path.endsWith("/execute")) ? 120000 : 20000);
   const signal = options.signal ? AbortSignal.any([timeout, options.signal]) : timeout;
   const response = await fetch(`/api/v1${path}`, { ...options, headers, signal, credentials: "same-origin", cache: "no-store" });
   const data = await response.json().catch(() => null) as (T & { error?: { code?: string; message?: string }; request_id?: string }) | null;

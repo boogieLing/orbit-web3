@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 	"usedit/internal/database"
+	"usedit/internal/studio"
 )
 
 type Request struct {
@@ -23,6 +24,7 @@ type Response struct {
 	Body    string            `json:"body"`
 }
 type Config struct {
+	Studio         studio.Config
 	ExperienceMode bool
 	RPCURL         string
 	ComposeURL     string

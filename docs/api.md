@@ -43,3 +43,17 @@ POST /collections/{id}/compose {instruction} -> 默认执行本地页面规则�
 中文品牌“引力”，英文 Orbit。遵守用户措辞要求。资料笔记保留官方来源；固定内容库用于笔试展示，用户操作正常持久化。独立社区身份无钱包地址，记录关联使用 recorded，不显示为链上核验。
 发布、编辑、记录、精选及版本在失败时保留输入并说明原因。精选页有实际 HTML 预览、复制、下载与历史；预览 sandbox 只允许脚本，无同源、无外部请求。本地页面调整仅承诺界面列明的字段，不提供任意应用代码构建。
 推荐理由对应实际兴趣与互动信号，余额和收益不进入排序。关闭完整体验后保留原钱包签名、凭据核验和外部页面调整路径。
+
+
+## 应用创作
+
+- GET `/studio/config` → 可用配置与项目上限，不返回凭据。
+- GET/POST `/studio/projects` → 当前身份的项目列表/创建；创建入参 `{id,title}`。
+- GET `/studio/projects/:id` → 项目、全部需求记录、版本索引。
+- POST `.../runs` `{prompt,revision,request_key}` → 持久排队任务；同键不同内容拒绝。
+- POST `.../runs/:run/execute` → 原子领取并实际调用，重复请求返回已有状态。
+- GET `.../versions/:version` → 指定完整代码；POST `.../restore` `{version,revision}` → 恢复代码。
+- GET/PUT `.../state` → 应用业务数据，写入 `{data,revision}`，冲突 409。
+- GET `.../export` → 当前代码 HTML 附件。
+
+所有子资源校验项目归属；写入共用会话、同源及请求标识校验。

@@ -1,4 +1,5 @@
-import { sqliteTable, text, integer, index, uniqueIndex, primaryKey } from 'drizzle-orm/sqlite-core';
+import { sql } from 'drizzle-orm';
+import { sqliteTable, text, integer, index, uniqueIndex, primaryKey, check } from 'drizzle-orm/sqlite-core';
 
 export const users = sqliteTable('users', {
   id: text('id').primaryKey(), wallet: text('wallet'), displayName: text('display_name').notNull(),
@@ -47,3 +48,23 @@ export const collectionVersions = sqliteTable('collection_versions', {
   collectionID: text('collection_id').notNull().references(() => collections.id), version: integer('version').notNull(),
   data: text('data').notNull(), createdAt: text('created_at').notNull(),
 }, t => [primaryKey({columns:[t.collectionID,t.version]})]);
+
+// 工作台项目与运行状态独立于社区内容，版本只追加，业务数据单独保留。
+export const studioProjects = sqliteTable('studio_projects', {
+  id: text('id').primaryKey(), userID: text('user_id').notNull().references(() => users.id), title: text('title').notNull(),
+  version: integer('version').notNull().default(0), revision: integer('revision').notNull().default(0),
+  activeRun: text('active_run').notNull().default(''), state: text('state').notNull().default('{}'), stateRevision: integer('state_revision').notNull().default(0),
+  createdAt: text('created_at').notNull(), updatedAt: text('updated_at').notNull(),
+}, t => [index('studio_projects_owner').on(t.userID,t.updatedAt)]);
+export const studioRuns = sqliteTable('studio_runs', {
+  id: text('id').primaryKey(), projectID: text('project_id').notNull().references(() => studioProjects.id),
+  requestKey: text('request_key').notNull(), requestHash: text('request_hash').notNull(), prompt: text('prompt').notNull(),
+  baseRevision: integer('base_revision').notNull(), baseVersion: integer('base_version').notNull(), status: text('status').notNull(),
+  message: text('message').notNull().default(''), provider: text('provider').notNull().default(''), model: text('model').notNull().default(''),
+  resultVersion: integer('result_version').notNull().default(0), deadline: integer('deadline').notNull(),
+  createdAt: text('created_at').notNull(), updatedAt: text('updated_at').notNull(),
+}, t => [uniqueIndex('studio_runs_request').on(t.projectID,t.requestKey), index('studio_runs_project').on(t.projectID,t.createdAt), index('studio_runs_deadline').on(t.status,t.deadline), check('studio_runs_status',sql`${t.status} IN ('queued','running','succeeded','failed')`)]);
+export const studioVersions = sqliteTable('studio_versions', {
+  projectID: text('project_id').notNull().references(() => studioProjects.id), version: integer('version').notNull(), html: text('html').notNull(),
+  runID: text('run_id').notNull().references(() => studioRuns.id), createdAt: text('created_at').notNull(),
+}, t => [primaryKey({columns:[t.projectID,t.version]}),uniqueIndex('studio_versions_run').on(t.runID)]);

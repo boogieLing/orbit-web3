@@ -37,9 +37,9 @@ export async function goRequest(request: Request, env: Cloudflare.Env) {
    async query(sql:string,argsJSON:string){const args=JSON.parse(argsJSON) as (string|number|null)[];return JSON.stringify(await env.DB.prepare(sql).bind(...args).all());},
    async batch(statementsJSON:string){const statements=JSON.parse(statementsJSON) as {SQL:string;Args:(string|number|null)[]}[];return JSON.stringify(await env.DB.batch(statements.map(s=>env.DB.prepare(s.SQL).bind(...(s.Args??[])))));}
   };
-  const config=env as Cloudflare.Env & {ETH_RPC_URL?:string;COMPOSE_URL?:string;COMPOSE_API_KEY?:string;COMPOSE_MODEL?:string;USEDIT_EXPERIENCE_MODE?:string};
+  const config=env as Cloudflare.Env & {ETH_RPC_URL?:string;COMPOSE_URL?:string;COMPOSE_API_KEY?:string;COMPOSE_MODEL?:string;STUDIO_URL?:string;STUDIO_API_KEY?:string;STUDIO_MODEL?:string;STUDIO_PROVIDER?:string;USEDIT_EXPERIENCE_MODE?:string};
   const input={method:request.method,url:request.url,headers:Object.fromEntries(request.headers),body,platform_id:request.headers.get('oai-authenticated-user-id')??''};
-  const result=JSON.parse(await (globalThis as RuntimeGlobal).useditHandle(bridge,JSON.stringify(input),JSON.stringify({ExperienceMode:config.USEDIT_EXPERIENCE_MODE!=='false',RPCURL:config.ETH_RPC_URL??'https://ethereum-rpc.publicnode.com',ComposeURL:config.COMPOSE_URL??'',ComposeKey:config.COMPOSE_API_KEY??'',ComposeModel:config.COMPOSE_MODEL??''}))) as {status:number;headers:Record<string,string>;body:string};
+  const result=JSON.parse(await (globalThis as RuntimeGlobal).useditHandle(bridge,JSON.stringify(input),JSON.stringify({Studio:{URL:config.STUDIO_URL??'',Key:config.STUDIO_API_KEY??'',Model:config.STUDIO_MODEL??'',Provider:config.STUDIO_PROVIDER??''},ExperienceMode:config.USEDIT_EXPERIENCE_MODE!=='false',RPCURL:config.ETH_RPC_URL??'https://ethereum-rpc.publicnode.com',ComposeURL:config.COMPOSE_URL??'',ComposeKey:config.COMPOSE_API_KEY??'',ComposeModel:config.COMPOSE_MODEL??''}))) as {status:number;headers:Record<string,string>;body:string};
   return new Response(result.body,{status:result.status,headers:result.headers});
  }catch (error) { console.error('go_runtime',error); return Response.json({error:{code:'runtime_unavailable',message:'服务暂不可用，请稍后重试'}},{status:503}); }
 }
